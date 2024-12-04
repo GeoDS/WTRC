@@ -39,3 +39,6 @@ matplotlib-base=3.8.0
 A full list of the packages and package versions can be found in the trc_env.yml file.
 
 ![image](https://github.com/user-attachments/assets/131a9e04-3795-45b4-819a-64b7aae7b799)
+
+## Usage
+There are two demo files: WTRC_example.ipynb, and TTRC_example.ipynb. To distinguish the weighted temporal rich club effects from the topological temporal rich club effects, you can run both and compare them. While the files are mostly similar, the WTRC and the TTRC use different randomization methods to prepare the null graphs, and all edge weights are set to 1 in the TTRC.
