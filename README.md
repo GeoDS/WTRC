@@ -29,3 +29,13 @@ Kruse, J., Gao, S.*, Ji, Y., Levin, K., Huang, Q., and Mayer, K. (2024).  [Ident
 ```
 
 ## Requirements
+WTRC uses the following packages with Python 3.12.0:
+numpy==1.26.0
+pandas==2.1.1
+shapely==2.0.1
+geopandas=0.14.0
+matplotlib-base=3.8.0
+
+A full list of the packages and package versions can be found in the trc_env.yml file.
+
+![image](https://github.com/user-attachments/assets/131a9e04-3795-45b4-819a-64b7aae7b799)
