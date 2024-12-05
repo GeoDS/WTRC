@@ -17,7 +17,7 @@ Kruse, J., Gao, S.*, Ji, Y., Levin, K., Huang, Q., and Mayer, K. (2024).  [Ident
 
 ```
 @article{liang2024GeoAI,
-  title={dentifying rich clubs in spatiotemporal interaction networks},
+  title={Identifying rich clubs in spatiotemporal interaction networks},
   author={Kruse, Jacob and Gao, Song and Ji, Yuhan and Levin, Keith and Huang, Qunying and Mayer, Kenneth},
   journal={Annals of the American Association of Geographers},
   volume={x},
