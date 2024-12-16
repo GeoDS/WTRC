@@ -28,7 +28,7 @@ Kruse, J., Gao, S.*, Ji, Y., Levin, K., Huang, Q., and Mayer, K. (2025).  [Ident
 }
 ```
 
-You may also be interested in the original TRC reserch: 
+You may also be interested in the original TRC paper: 
 
 Pedreschi, N., Battaglia, D., & Barrat, A. (2022). [The temporal rich club phenomenon](https://www.nature.com/articles/s41567-022-01634-8). *Nature Physics*, 18(8), 931-938.
 Github: [https://github.com/nicolaPedre/Temporal-Rich-Club](https://github.com/nicolaPedre/Temporal-Rich-Club)
