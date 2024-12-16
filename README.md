@@ -10,7 +10,7 @@ Spatial networks are widely used in various fields to represent and analyze inte
 
 ## Paper
 
-If you find our code useful for your research, you may cite our paper:
+If you find our code on WTRC useful for your research, you may cite our paper:
 
 Kruse, J., Gao, S.*, Ji, Y., Levin, K., Huang, Q., and Mayer, K. (2025).  [Identifying rich clubs in spatiotemporal interaction networks](https://arxiv.org/abs/2210.08041). Annals of the American Association of Geographers. X, X, 1-20.
 
@@ -25,6 +25,24 @@ Kruse, J., Gao, S.*, Ji, Y., Levin, K., Huang, Q., and Mayer, K. (2025).  [Ident
   pages={x},
   year={2025},
   publisher={Taylor and Francis}
+}
+```
+
+You may also be interested in the original TRC reserch: 
+
+Pedreschi, N., Battaglia, D., & Barrat, A. (2022). [The temporal rich club phenomenon](https://www.nature.com/articles/s41567-022-01634-8). *Nature Physics*, 18(8), 931-938.
+Github: [https://github.com/nicolaPedre/Temporal-Rich-Club](https://github.com/nicolaPedre/Temporal-Rich-Club)
+
+```
+@article{pedreschi2022temporal,
+  title={The temporal rich club phenomenon},
+  author={Pedreschi, Nicola and Battaglia, Demian and Barrat, Alain},
+  journal={Nature Physics},
+  volume={18},
+  number={8},
+  pages={931--938},
+  year={2022},
+  publisher={Nature Publishing Group UK London}
 }
 ```
 
