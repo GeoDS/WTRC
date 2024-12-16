@@ -12,11 +12,11 @@ Spatial networks are widely used in various fields to represent and analyze inte
 
 If you find our code useful for your research, you may cite our paper:
 
-Kruse, J., Gao, S.*, Ji, Y., Levin, K., Huang, Q., and Mayer, K. (2024).  [Identifying rich clubs in spatiotemporal interaction networks](https://arxiv.org/abs/2210.08041). Annals of the American Association of Geographers. X, X, 1-20.
+Kruse, J., Gao, S.*, Ji, Y., Levin, K., Huang, Q., and Mayer, K. (2025).  [Identifying rich clubs in spatiotemporal interaction networks](https://arxiv.org/abs/2210.08041). Annals of the American Association of Geographers. X, X, 1-20.
 
 
 ```
-@article{liang2024GeoAI,
+@article{kruse2025identifying,
   title={Identifying rich clubs in spatiotemporal interaction networks},
   author={Kruse, Jacob and Gao, Song and Ji, Yuhan and Levin, Keith and Huang, Qunying and Mayer, Kenneth},
   journal={Annals of the American Association of Geographers},
