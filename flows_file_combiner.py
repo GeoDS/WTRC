@@ -5,7 +5,8 @@ import pandas as pd
 import os
 
 # Define the directory containing the .npy files
-data_dir = '/media/raid/jkruse/Temporal-Rich-Club/Human_Mobility_Flows/weekly_flows/ct2ct/merged_flows/split_npy_files/'
+data_dir = 'split_flow_files'
+
 # Define column names (add the original column names here)
 columns = ["geoid_o", "geoid_d", "flows", "t", "i", "j"]
 
@@ -30,7 +31,7 @@ for file in sorted(os.listdir(data_dir)):
 combined_data = pd.concat(all_data, ignore_index=True)
 
 # Save the combined DataFrame as a CSV file
-output_csv = '/media/raid/jkruse/Temporal-Rich-Club/Human_Mobility_Flows/weekly_flows/ct2ct/merged_flows/WICTs_allyears_test.csv'
+output_csv = 'WICTs_allyears.csv'
 
 combined_data.to_csv(output_csv, index=False)
 
