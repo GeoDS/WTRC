@@ -12,7 +12,7 @@ Spatial networks are widely used in various fields to represent and analyze inte
 
 If you find our code on WTRC useful for your research, you may cite our paper:
 
-Kruse, J., Gao, S.*, Ji, Y., Levin, K., Huang, Q., and Mayer, K. (2025).  [Identifying rich clubs in spatiotemporal interaction networks](https://www.arxiv.org/abs/2501.05636). Annals of the American Association of Geographers. X, X, 1-20.
+Kruse, J., Gao, S.*, Ji, Y., Levin, K., Huang, Q., and Mayer, K. (2025).  [Identifying rich clubs in spatiotemporal interaction networks](https://www.arxiv.org/abs/2501.05636). Annals of the American Association of Geographers. 115, 4, 1-20.
 
 
 ```
@@ -20,9 +20,9 @@ Kruse, J., Gao, S.*, Ji, Y., Levin, K., Huang, Q., and Mayer, K. (2025).  [Ident
   title={Identifying rich clubs in spatiotemporal interaction networks},
   author={Kruse, Jacob and Gao, Song and Ji, Yuhan and Levin, Keith and Huang, Qunying and Mayer, Kenneth},
   journal={Annals of the American Association of Geographers},
-  volume={x},
-  number={x},
-  pages={x},
+  volume={115},
+  number={14},
+  pages={899--922},
   year={2025},
   publisher={Taylor and Francis}
 }
@@ -60,3 +60,8 @@ A full list of the packages and package versions can be found in the trc_env.yml
 
 ## Usage
 There are two demo files: WTRC_example.ipynb, and TTRC_example.ipynb. To distinguish the weighted temporal rich club effects from the topological temporal rich club effects, you can run both and compare them. While the files are mostly similar, the WTRC and the TTRC use different randomization methods to prepare the null graphs, and all edge weights are set to 1 in the TTRC.
+## Data
+wi_cong_adopted_2022: 2022 Wisconsin Congressional Plan in GIS shapefile format
+wi_ct_boundaries_2018: Wisconsin Census Tract Boundaries in GIS shapefile format, which can also be downloaded from US Census.
+split_flow_files: It contains multiple aggregated human mobility flow files at the Census Tract Level in Wisconsin that can be merged into one large file using the Python script 'flows_file_combiner.py'
+
