@@ -61,7 +61,9 @@ A full list of the packages and package versions can be found in the trc_env.yml
 ## Usage
 There are two demo files: WTRC_example.ipynb, and TTRC_example.ipynb. To distinguish the weighted temporal rich club effects from the topological temporal rich club effects, you can run both and compare them. While the files are mostly similar, the WTRC and the TTRC use different randomization methods to prepare the null graphs, and all edge weights are set to 1 in the TTRC.
 ## Data
-wi_cong_adopted_2022: 2022 Wisconsin Congressional Plan in GIS shapefile format
+wi_cong_adopted_2022: 2022 Wisconsin Congressional Plan in GIS shapefile format.
+
 wi_ct_boundaries_2018: Wisconsin Census Tract Boundaries in GIS shapefile format, which can also be downloaded from US Census.
+
 split_flow_files: It contains multiple aggregated human mobility flow files at the Census Tract Level in Wisconsin that can be merged into one large file using the Python script 'flows_file_combiner.py'
 
