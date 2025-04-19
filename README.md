@@ -65,5 +65,5 @@ wi_cong_adopted_2022: 2022 Wisconsin Congressional Plan in GIS shapefile format.
 
 wi_ct_boundaries_2018: Wisconsin Census Tract Boundaries in GIS shapefile format, which can also be downloaded from US Census.
 
-split_flow_files: It contains multiple aggregated human mobility flow files at the Census Tract Level in Wisconsin that can be merged into one large file using the Python script 'flows_file_combiner.py'
+split_flow_files: It contains multiple aggregated human mobility flow files at the Census Tract Level in Wisconsin that can be merged into one large file 'WICTs_allyears.csv' using the Python script 'flows_file_combiner.py'
 
