@@ -11,6 +11,7 @@ import time
 import timeit
 import uuid
 from collections import defaultdict
+from pathlib import Path
 from copy import deepcopy
 from multiprocessing import Manager, Pool, Process, Queue, Value, cpu_count
 from random import choice, sample
@@ -23,6 +24,15 @@ import numpy as np
 import pandas as pd
 from matplotlib.colors import TwoSlopeNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+# Data shipped with the repository is located relative to this file, so the
+# module works whatever directory the interpreter was started in.
+REPO_ROOT = Path(__file__).resolve().parent
+DATA_DIR = REPO_ROOT / "data"
+DISTRICTS_SHP = DATA_DIR / "wi_congressional_2022" / "POLYGON.shp"
+TRACTS_ZIP = DATA_DIR / "wi_tracts_2018" / "WI_CensusCBF_Tracts_2018.zip"
+TRACTS_SHP = (f"zip://{TRACTS_ZIP}"
+              "!WI_CensusCBF_Tracts_2018/cb_2018_55_tract_500k.shp")
 
 
 def output_path(args, kind, ext="npy"):
@@ -41,15 +51,13 @@ def output_path(args, kind, ext="npy"):
 
 def filter_flows_to_district(flows_df, district):
     # load district boundaries
-    district_boundaries = gpd.read_file("wi_cong_adopted_2022/POLYGON.shp")
+    district_boundaries = gpd.read_file(DISTRICTS_SHP)
     district_boundaries = district_boundaries.to_crs("EPSG:3071")
     district_boundaries['NAME'] = district_boundaries['NAME'].astype(int) 
     district_polygon = district_boundaries[district_boundaries['NAME'] == district].geometry.iloc[0]
     # load census tracts
     # cts = './wi_ct_boundaries_2020/wi_t_2020_bound.shp'
-    cts = ("zip://wi_ct_boundaries_2018/WI_CensusCBF_Tracts_2018.zip"
-           "!WI_CensusCBF_Tracts_2018/cb_2018_55_tract_500k.shp")
-    cts = gpd.read_file(cts)
+    cts = gpd.read_file(TRACTS_SHP)
     cts = cts.to_crs("EPSG:3071")
     cts['GEOID'] = cts['GEOID'].astype(int)
     # filter census tracts by spatial intersect (mostly within district boundary)
@@ -139,7 +147,7 @@ def plot_rich_club_scan(ks, deltas, RC_norm, args):
     
 
 def plot_congressional_districts():
-    gdf = gpd.read_file("./wi_cong_adopted_2022/POLYGON.shp")
+    gdf = gpd.read_file(DISTRICTS_SHP)
     # gdf = gdf.to_crs("EPSG:32616")
     gdf = gdf.to_crs("EPSG:3071")
     gdf['centroid'] = gdf.geometry.centroid

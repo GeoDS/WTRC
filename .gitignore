@@ -1,5 +1,8 @@
-# Built by flows_file_combiner.py from split_flow_files/
-WICTs_allyears.csv
+# Built by data/combine_flows.py from data/flows/
+data/WICTs_allyears.csv
+
+# Written by analysis runs; the published results live in results/
+output/
 
 __pycache__/
 *.py[cod]
@@ -8,4 +11,3 @@ __pycache__/
 
 # Local verification harness, not part of the release
 tests/
-output/_verify/

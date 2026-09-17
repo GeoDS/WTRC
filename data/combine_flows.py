@@ -1,16 +1,18 @@
 """Combine the split .npy flow files into the single CSV the analysis reads.
 
 The flow dataset is committed in chunks to stay under file size limits. Run this
-once to rebuild `WICTs_allyears.csv`, which the example notebooks expect.
+once to rebuild `data/WICTs_allyears.csv`, which the example notebooks expect.
 """
 
 import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-DATA_DIR = "split_flow_files"
-OUTPUT_CSV = "WICTs_allyears.csv"
+HERE = Path(__file__).resolve().parent
+DATA_DIR = HERE / "flows"
+OUTPUT_CSV = HERE / "WICTs_allyears.csv"
 COLUMNS = ["geoid_o", "geoid_d", "weight", "t", "i", "j"]
 
 chunks = []

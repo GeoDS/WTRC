@@ -2,8 +2,8 @@
 
 **Identifying rich clubs in spatiotemporal interaction networks**
  
-![WTRC](wi_wtrc_ttrc_horizontal_ave.png)
-![WTRC Example](flow_snapshots_nolabels.png)
+![WTRC](figures/wi_wtrc_ttrc_horizontal_ave.png)
+![WTRC Example](figures/flow_snapshots_nolabels.png)
 
 **Abstract:** 
 Spatial networks are widely used in various fields to represent and analyze interactions or relationships between locations or spatially distributed entities or objects. While existing studies have proposed methods for hub identification and community detection in spatial networks, relatively few have focused on quantifying the strength or density of connections shared within a community of hubs across space and time. Borrowing from network science, there is a relevant concept known as the 'rich club' phenomenon, which describes the tendency of 'rich' nodes to form densely interconnected sub-networks. Although there are established methods to quantify topological, weighted, and temporal rich clubs individually, there is limited research on measuring the rich club effect in spatially-weighted temporal networks, which could be particularly useful for studying dynamic spatial interaction networks. To address this gap, we introduce the spatially-weighted temporal rich club (WTRC), a metric that quantifies the strength and consistency of connections between rich nodes in a spatiotemporal network. Additionally, we present a unified rich club framework that distinguishes the WTRC effect from other rich club effects, providing a way to measure topological, weighted, and temporal rich club effects together. Through two case studies of human mobility networks at different spatial scales, we demonstrate how the WTRC is able to identify significant weighted temporal rich club effects, whereas the unweighted equivalent in the same network either fails to detect a rich club effect or inaccurately estimates its significance. In each case study, we explore the spatial layout and temporal variations revealed by the WTRC analysis, showcasing its particular value in studying spatiotemporal interaction networks. This research offers new insights into the study of spatiotemporal networks, with critical implications for applications such as transportation, redistricting, and epidemiology.
@@ -77,16 +77,42 @@ The analysis runs in five steps, each a function in `wtrc.py`:
 `compute_k_and_delta_ranges` returns the richness thresholds and time lags a scan
 sweeps over, which the notebooks use for plotting.
 
-Results are written to `output/` and named by the settings that produced them, as
+A run writes to `output/`, named by the settings that produced it, as
 `{network_type}_rich_club_dis{district}_t{start}-{end}_{kind}`, where `kind` is
 `scan` for the rich club coefficients, `max_t` for the starting timestep of the
 strongest window, `geoids` for the club members, and `m_s` for the per-window
 matrices. `output_path` in `wtrc.py` builds these names.
 
+The equivalent files for the paper are in `results/`, so a run can be compared
+against them without overwriting them.
+
+## Repository layout
+
+```
+wtrc.py                     the method
+examples/                   WTRC_example.ipynb, TTRC_example.ipynb
+data/
+  flows/                    human mobility flows, split into chunks
+  combine_flows.py          rebuilds data/WICTs_allyears.csv from them
+  wi_congressional_2022/    2022 Wisconsin Congressional Plan (shapefile)
+  wi_tracts_2018/           Wisconsin census tract boundaries (zipped shapefile)
+results/                    the scan results reported in the paper
+output/                     written by your own runs
+figures/                    images used in this README
+```
+
 ## Data
-wi_cong_adopted_2022: 2022 Wisconsin Congressional Plan in GIS shapefile format.
+`data/flows/` holds aggregated human mobility flows between Wisconsin census
+tracts, committed as chunks to stay under file size limits. Run
+`python data/combine_flows.py` once to merge them into
+`data/WICTs_allyears.csv`, which the notebooks read. That file is not committed
+because it is rebuilt from the chunks.
 
-wi_ct_boundaries_2018: Wisconsin Census Tract Boundaries, committed as a zipped shapefile (`WI_CensusCBF_Tracts_2018.zip`) and read directly from the archive. The same file can be downloaded from the US Census.
+`data/wi_congressional_2022/` is the 2022 Wisconsin Congressional Plan, retrieved
+from the Office of Governor Tony Evers via the Redistricting Data Hub and
+unmodified; see the README.txt in that directory.
 
-split_flow_files: It contains multiple aggregated human mobility flow files at the Census Tract Level in Wisconsin that can be merged into one large file 'WICTs_allyears.csv' using the Python script 'flows_file_combiner.py'
+`data/wi_tracts_2018/` holds the Wisconsin census tract boundaries as a zipped
+shapefile, read straight from the archive. The same file is available from the
+US Census.
 
