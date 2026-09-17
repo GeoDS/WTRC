@@ -1,0 +1,11 @@
+# Built by flows_file_combiner.py from split_flow_files/
+WICTs_allyears.csv
+
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.DS_Store
+
+# Local verification harness, not part of the release
+tests/
+output/_verify/

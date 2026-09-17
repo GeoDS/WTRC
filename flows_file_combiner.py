@@ -1,38 +1,26 @@
-# Run this to combine the .npy files that make up the flow dataset
+"""Combine the split .npy flow files into the single CSV the analysis reads.
+
+The flow dataset is committed in chunks to stay under file size limits. Run this
+once to rebuild `WICTs_allyears.csv`, which the example notebooks expect.
+"""
+
+import os
 
 import numpy as np
 import pandas as pd
-import os
 
-# Define the directory containing the .npy files
-data_dir = 'split_flow_files'
+DATA_DIR = "split_flow_files"
+OUTPUT_CSV = "WICTs_allyears.csv"
+COLUMNS = ["geoid_o", "geoid_d", "weight", "t", "i", "j"]
 
-# Define column names (add the original column names here)
-columns = ["geoid_o", "geoid_d", "flows", "t", "i", "j"]
+chunks = []
+for file_name in sorted(os.listdir(DATA_DIR)):
+    if not file_name.endswith(".npy"):
+        continue
+    file_path = os.path.join(DATA_DIR, file_name)
+    print(f"Loading {file_path}...")
+    chunks.append(pd.DataFrame(np.load(file_path), columns=COLUMNS))
 
-
-# Initialize an empty list to store the loaded data
-all_data = []
-
-# Iterate over all .npy files in the directory
-for file in sorted(os.listdir(data_dir)):
-    if file.endswith(".npy"):
-        file_path = os.path.join(data_dir, file)
-        print(f"Loading {file_path}...")
-        
-        # Load the numpy file
-        chunk = np.load(file_path)
-        
-        # Convert to DataFrame and append to the list
-        df_chunk = pd.DataFrame(chunk, columns=columns)
-        all_data.append(df_chunk)
-
-# Combine all chunks into one DataFrame
-combined_data = pd.concat(all_data, ignore_index=True)
-
-# Save the combined DataFrame as a CSV file
-output_csv = 'WICTs_allyears.csv'
-
-combined_data.to_csv(output_csv, index=False)
-
-print(f"Combined data saved to {output_csv}")
+combined = pd.concat(chunks, ignore_index=True)
+combined.to_csv(OUTPUT_CSV, index=False)
+print(f"Combined {len(chunks)} files into {OUTPUT_CSV} ({len(combined):,} rows)")

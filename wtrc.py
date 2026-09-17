@@ -1,24 +1,43 @@
-import datetime
 import argparse
+import copy
+import datetime
 import importlib
-import uuid
+import math
 import multiprocessing
 import os
 import random
 import sys
+import time
 import timeit
+import uuid
 from collections import defaultdict
 from copy import deepcopy
 from multiprocessing import Manager, Pool, Process, Queue, Value, cpu_count
+from random import choice, sample
+
+import geopandas as gpd
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import pandas as pd
-import time
-from random import sample, choice
-import copy
-import matplotlib.cm as cm
-import geopandas as gpd
+from matplotlib.colors import TwoSlopeNorm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+
+def output_path(args, kind, ext="npy"):
+    """Path for one of a scan's output files.
+
+    The name is built from the settings that define the scan, so a run can be
+    identified from its filename alone: network type, district, and timestep
+    range. `kind` separates the files a single scan writes -- "scan" for the
+    rich club coefficients, "max_t" for the starting timestep of the strongest
+    window, "geoids" for the club members, "m_s" for the per-window matrices.
+    """
+    stem = (f"{args.network_type}_rich_club_dis{args.district}"
+            f"_t{args.ti}-{args.t}_{kind}")
+    return f"{args.path_prefix}{stem}.{ext}"
+
 
 def filter_flows_to_district(flows_df, district):
     # load district boundaries
@@ -64,11 +83,6 @@ def filter_flows_to_district(flows_df, district):
     
     return flows_df_filtered, node_geoid_dict, boundary, filtered_cts
 
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from matplotlib.colors import TwoSlopeNorm
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 def plot_rich_club_scan(ks, deltas, RC_norm, args):
     # Replace infinities and NaNs
@@ -119,75 +133,10 @@ def plot_rich_club_scan(ks, deltas, RC_norm, args):
     cbar.ax.set_ylabel(r'$M(k,\Delta)_{norm}$', rotation=-90, va="bottom")
 
     # Save and show the plot
-    path = f'{args.date}_{args.npy_file}_{args.shuffle}_{args.network_type}_dis{args.district}_RCS.png'
-    plt.savefig('./output/'+path, dpi=300, bbox_inches='tight')
+    path = output_path(args, "scan", ext="png")
+    plt.savefig(path, dpi=300, bbox_inches='tight')
     plt.show()
     
-def plot_rich_nodes(flows_df, district, rich_nodes, args):
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import matplotlib.cm as cm
-    from matplotlib.colors import TwoSlopeNorm
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-    # Replace infinities and NaNs
-    RC_norm = np.nan_to_num(RC_norm, nan=-99)
-    RC_norm_masked = np.ma.masked_where(RC_norm == -99, RC_norm)
-
-    # Create a custom colormap and set the 'bad' value color
-    cmap = cm.PiYG.copy()
-    cmap.set_bad('grey')
-
-    # Normalization
-    # norm = TwoSlopeNorm(vmin=0, vcenter=1.0, vmax=RC_norm_masked.max())
-    norm = TwoSlopeNorm(vmin=0, vcenter=1.0, vmax=2.2)
-
-    # Create the plot
-    # fig, ax = plt.subplots(figsize=(10, 8))  # Adjusted figsize
-    size = 4
-    fig, ax = plt.subplots(figsize=(1.25*size, 1*size))
-    im = ax.imshow(RC_norm_masked, cmap=cmap, norm=norm, aspect='auto')  # Using 'auto' aspect
-
-    # Setting the x and y ticks to the borders of each cell
-    ax.set_xticks(np.arange(len(ks)) - 0.5, minor=True)
-    ax.set_yticks(np.arange(len(deltas)) - 0.5, minor=True)
-
-    # Grid lines based on minor ticks
-    ax.grid(which="minor", color="black", linestyle='-', linewidth=0.33)
-    ax.tick_params(which="minor", size=0)
-
-    # Setting the x and y major tick labels
-    ax.set_xticks(np.arange(len(ks)))
-    ax.set_yticks(np.arange(len(deltas)))
-    ax.set_xticklabels(ks, rotation=45)
-    ax.set_yticklabels(deltas)
-
-    # Loop over data dimensions and create text annotations for cell values
-    for i in range(len(deltas)):
-        for j in range(len(ks)):
-            ax.text(j, i, f'{RC_norm_masked[i, j]:.1f}', 
-                    ha="center", va="center", color="black")
-
-    ax.set_ylabel(r'$\Delta$ (time-lag over which TRC is present)')
-    ax.set_xlabel('Temporal Edge Count (richness sequence)')  
-
-    # Create a divider for the existing axes instance
-    divider = make_axes_locatable(ax)
-    cbar_ax = divider.append_axes("right", size="5%", pad=0.1)
-
-    # Create the colorbar in the new axes
-    # cbar = fig.colorbar(im, cax=cbar_ax, ticks=[0, 1.0, RC_norm_masked.max()])
-    cbar = fig.colorbar(im, cax=cbar_ax, ticks=[0, 1.0, 2.2])
-    # cbar.ax.set_yticklabels(['0', '1.0', f'{RC_norm_masked.max():.2f}'])
-    cbar.ax.set_yticklabels(['0', '1.0', '2.2'])
-    cbar.ax.set_ylabel(r'$M(k,\Delta)_{norm}$', rotation=-90, va="bottom")
-
-    # Save and show the plot
-    # path = args.date + "_" + args.npy_file + "_" + args.network_type + "_dis" + str(args.district) + "_" + str(args.shuffle) + '.png'
-    path = f'{args.date}_{args.npy_file}_{args.shuffle}_{args.network_type}_dis{args.district}_RCS.png'
-    plt.savefig('./output/'+path, dpi=300, bbox_inches='tight')
-    plt.show()
-    
-    return boundary, filtered_cts, filtered_centroids
 
 def plot_congressional_districts():
     gdf = gpd.read_file("./wi_cong_adopted_2022/POLYGON.shp")
@@ -214,8 +163,6 @@ def plot_congressional_districts():
 # https://github.com/mgenois/RandTempNet/blob/059c8ec1ed4e18dba2ded3eeb0def2036b2ee637/classes.py#L207
 # link_timeline.display() returns a list of tuples ((i,j),[t...])
 
-import networkx as nx
-from random import choice
 
 def load_randomized_graphs(graphs_list, args):
     # read in one randomized graph
@@ -301,7 +248,9 @@ def randomize_preserving_strength(i,G):
     for u, v, data in G_copy.edges(data=True): # should only find existing edges
         try:
             data['weight'] = (mean_degree / mean_strength) * strengths[u] * strengths[v] / (degrees[u] * degrees[v])
-        except:
+        except (IndexError, KeyError):
+            # the edge keeps its original weight, so the randomization for this
+            # edge is not applied -- report it rather than failing silently
             print(f'FAILED: u,v,data = {u},{v},{data}, {degrees[u]}, {degrees[v]}')
     return G_copy
 
@@ -309,8 +258,6 @@ def randomize_preserving_strength(i,G):
 
 def randomize_series_preserving_strength(graphs_list):
     # https://github.com/jeffalstott/richclub/blob/master/richclub.py
-
-    from numpy.random import shuffle
     new_graphs = []
     for i, G in enumerate(graphs_list):
         G_shuffled_w = randomize_preserving_strength(i,G)
@@ -637,29 +584,6 @@ def chunk(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-def make_simple_connected(G):
-    # Create a copy of the graph to avoid modifying the original
-    H = G.copy()
-
-    # Remove self-loops
-    H.remove_edges_from(nx.selfloop_edges(H))
-
-    # Remove parallel edges (in a MultiGraph)
-    if isinstance(H, nx.MultiGraph):
-        # Create a new simple graph from the MultiGraph
-        H = nx.Graph(H)
-        
-    # Check connectivity and add edges if necessary
-    if not nx.is_connected(H):
-        # Get all disconnected components
-        components = list(nx.connected_components(H))
-        # Iterate over the components and connect them
-        for i in range(len(components) - 1):
-            # Add an edge between the last node of the current component
-            # and the first node of the next component
-            H.add_edge(list(components[i])[-1], list(components[i + 1])[0])
-
-    return H
 def build_graph_series(df, max_ind, args):
     shuffle=args.shuffle
     # tranform data in series of nx graphs
@@ -738,12 +662,9 @@ def temporal_rich_club_mod(var_list):
     tup = (delta,k,np_max_M_s,M_s,time_max_t, rich_geoids)
     return tup
 
-import numpy as np
-import math
 
 
 
-import numpy as np
 
 # for aiport as of 3/31/25
 def compute_k_and_delta_ranges(df, graphs_array, args, weighted_degree='False'):
@@ -795,19 +716,6 @@ def compute_k_and_delta_ranges(df, graphs_array, args, weighted_degree='False'):
 
 
 
-def generate_chunks(deltas, ks, graphs_list, AGG, args):
-    nodes = np.sort(np.array([v for v in AGG.nodes]), axis=0)
-    RC_mat=np.zeros((len(deltas),len(ks)))
-    geoid_mat=np.empty((len(deltas),len(ks)), dtype=object)
-    RC_maxTs=np.zeros((len(deltas),len(ks)))
-    
-    var_lists = []
-    for delta in range(len(deltas)):
-        for k in range(len(ks)):
-            var_lists.append(copy.deepcopy([deltas, ks, delta, k, graphs_list, AGG, nodes, args]))
-    var_lists_segments = list(chunk(var_lists, len(var_lists)/2)) # was 20
-    print(f'len(var_lists_segments) = {len(var_lists_segments)}')
-    return RC_mat, var_lists_segments, RC_maxTs, geoid_mat
 
 
 def run_rich_club_segments(RC_mat, var_lists_segments, RC_maxTs, RC_rich_geoids):
@@ -831,11 +739,6 @@ def temporal_rich_club(Gt, AggG, k, delta, N, T, nodes, args):
 
 
 
-def count_unique_timesteps(flows_df, i_value, j_value):
-    # Count the number of unique 't' values for rows in the DataFrame that match the given 'i' and 'j'.
-    filtered_df = flows_df[(flows_df['i'] == i_value) & (flows_df['j'] == j_value)]
-    print(filtered_df['t'].nunique())
-    return filtered_df
 
 
 def load_flows(args):
@@ -844,6 +747,8 @@ def load_flows(args):
     path = args.data_dir
     flows_df = pd.read_csv(path + args.data_file)
     
+    # flows_file_combiner.py writes this column as 'weight'; older files called
+    # it 'flows', so accept either.
     if 'flows' in flows_df.columns:
         flows_df.rename(columns={'flows': 'weight'}, inplace=True)
         # print(flows_df.shape)
@@ -972,23 +877,23 @@ def calculate_rich_club_matrices(flows_df, graphs_array, args):
     RC_geoids_matrices = deepcopy(RC_geoids_list)
 
     # You can save them in a .npz file with np.savez
-    path = args.path_prefix + args.date + "_" + str(args.ti) + "_" + str(args.t) + "_M_s_" +args.npy_file + "_" + args.network_type +"_dis" + str(args.district)
-    np.savez(path+'_M_s_matrices.npz', **{'M_s_mat{}'.format(i): M_s_mat for i, M_s_mat in enumerate(M_s_mat_list)})
+    path = output_path(args, "m_s", ext="npz")
+    np.savez(path, **{'M_s_mat{}'.format(i): M_s_mat for i, M_s_mat in enumerate(M_s_mat_list)})
 
                           
                           
-    path = args.path_prefix + args.date + "_" + str(args.ti) + "_" + str(args.t) + "_" + args.npy_file + "_" + args.network_type + "_dis" + str(args.district) + '.npy'
+    path = output_path(args, "scan")
     RCs_array_save = np.stack(RC_matrices_list)
     print(f'saving to path = {path}')
     np.save(path, RCs_array_save)
     
-    path = args.path_prefix + args.date + "_" + str(args.ti) + "_" + str(args.t) + "_" + "MAX_Ts_" +args.npy_file + "_" + args.network_type +"_dis" + str(args.district) + '.npy'
+    path = output_path(args, "max_t")
     RCs_array_save_maxTs = np.stack(RC_maxTs_list)
     print(f'saving to path = {path}')
     np.save(path, RCs_array_save_maxTs)
 
     
-    path = args.path_prefix + args.date + "_" + str(args.ti) + "_" + str(args.t) + "_" + "geoids_" +args.npy_file + "_" + args.network_type +"_dis" + str(args.district) + '.npy'
+    path = output_path(args, "geoids")
     RC_geoids_matrices = np.stack(RC_geoids_matrices)
     print(f'saving to path = {path}')
     np.save(path, RC_geoids_matrices)
@@ -1004,16 +909,13 @@ def calculate_rich_club_matrices(flows_df, graphs_array, args):
     print('Saved RC matrices to ', path) 
     return RC_matrices_list, RC_maxTs_list, RC_geoids_list
 
-def unpack_graph_tuple(data):
-    RC_mat, var_lists_segments, RC_maxTs, geoid_mat = data
-    return run_rich_club_segments(RC_mat, var_lists_segments, RC_maxTs, geoid_mat)
 
 def load_results(args):
     # Construct the file path
     # path = args.path_prefix + args.date + "_" + args.npy_file + "_" + args.network_type + '.npy'
-    path = args.path_prefix + args.date + "_" + str(args.ti) + "_" + str(args.t) + "_" + args.npy_file + "_" + args.network_type + "_dis" + str(args.district) + '.npy'
-    path_maxTs = args.path_prefix + args.date + "_" + str(args.ti) + "_" + str(args.t) + "_" + "MAX_Ts_" +args.npy_file + "_" + args.network_type + "_dis" + str(args.district) +'.npy'
-    path_geoids = args.path_prefix + args.date + "_" + str(args.ti) + "_" + str(args.t) + "_" + "geoids_" +args.npy_file + "_" + args.network_type +"_dis" + str(args.district) + '.npy'
+    path = output_path(args, "scan")
+    path_maxTs = output_path(args, "max_t")
+    path_geoids = output_path(args, "geoids")
     # print(path)
     # Load the data
     RC_geoids_matrices = np.load(path_geoids, allow_pickle=True)
@@ -1036,14 +938,11 @@ def load_results(args):
     return og_matrix, RCs_array, data_new_maxTs, mean_matrix, RC_norm, RC_geoids_matrices
 
 
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 
 def plot_results(args):
 
     # path+='ut/240322_0_105_M_s_airports_trc_disDEG_M_s_matrices'
-    path=args.path_prefix + args.date + "_" + str(args.ti) + "_" + str(args.t) + "_M_s_" +args.npy_file + "_" + args.network_type +"_dis" + str(args.district)+'_M_s_matrices.npz'
+    path = output_path(args, "m_s", ext="npz")
     # path+= '.npz'
     # path = '/media/raid/jkruse/Temporal-Rich-Club/Human_Mobility_Flows/airport_wtrc/output/240322_0_105_M_s_airports_trc_disDEG_M_s_matrices.npz'
     data = np.load(path)
@@ -1102,92 +1001,9 @@ def plot_results(args):
 
 
 # to replicate original TRC workbook:
-import pandas as pd
-import numpy as np
-import networkx as nx
 
-def load_and_build_graphs(date, path):
-    # Load the CSV file into a DataFrame
-    USAL_TN_df = pd.read_csv(path)
-    
-    # Determine the unique nodes by combining 'i' and 'j' columns
-    combined_set = set(USAL_TN_df['i']).union(set(USAL_TN_df['j']))
-    print(f'number of unique iis+jjs = {len(combined_set)}')
-    
-    # Use 'flows' as weight for the edges
-    USAL_TN_df['weight'] = USAL_TN_df.loc[:, 'flows']
-    
-    # Keep only the required columns
-    USAL_TN_df = USAL_TN_df[['i', 'j', 'weight', 't', 'geoid_o', 'geoid_d']]
-    
-    # Identify unique 'i' and 'j' values to determine the nodes
-    iis = np.unique(USAL_TN_df['i'])
-    jjs = np.unique(USAL_TN_df['j'])
-    nodes = len(np.union1d(iis, jjs))
-    N = nodes
-    
-    # Determine the number of unique time steps
-    x = len(np.unique(USAL_TN_df['t']))
-    
-    # Placeholder for the function build_graphs - You'll need to define this
-    graphs_list_dc, AGG = build_graphs(USAL_TN_df, x, nodes, iis, jjs)
-    
-    # Create a list of all nodes
-    nodelist = np.union1d(iis, jjs)
-    
-    # Initialize an empty graph for aggregation
-    AL_AGG = nx.Graph()
-    al_agg = np.zeros((nodes, nodes))  # Assuming 'nodes' is the total number of unique nodes
-    
-    # Aggregate the graphs
-    for go in graphs_list_dc:
-        AL_AGG = nx.compose(AL_AGG, go)
-        al_agg += nx.to_numpy_array(go, nodelist=nodelist, weight='weight')
-    
-    return AL_AGG, AGG, al_agg, USAL_TN_df, graphs_list_dc, nodes, N
 
 # Note: The function build_graphs needs to be defined with its logic matching your specific requirements.
 
 
-def plot_aggregate_distributions(AL_AGG, AGG, al_agg, N):
-    print('These first two plots should be the same:')
-    # Aggregate degree for AL_AGG
-    agg_k = [fr[1] for fr in list(AL_AGG.degree())]
-    x, y = np.histogram(agg_k, bins=200)
-    plt.figure(figsize=(8, 3))
-    plt.semilogy(y[:-1], x, '+')
-    plt.title('Distribution of AL_AGG degree USAL 2012 - 2020')
-    plt.xlabel('$k_i$', fontsize=15)
-    plt.ylabel('$P(k_i)$', fontsize=15)
-    plt.show()
-
-    # Aggregate degree for AGG
-    agg_k = [fr[1] for fr in list(AGG.degree())]
-    x, y = np.histogram(agg_k, bins=200)
-    plt.figure(figsize=(8, 3))
-    plt.semilogy(y[:-1], x, '+')
-    plt.title('Distribution of AGG degree USAL 2012 - 2020')
-    plt.xlabel('$k_i$', fontsize=15)
-    plt.ylabel('$P(k_i)$', fontsize=15)
-    plt.show()
-
-    # Aggregate strength
-    s = np.sum(al_agg, axis=1)
-    x, y = np.histogram(s, bins=100)
-    plt.figure(figsize=(8, 3))
-    plt.semilogy(y[:-1], x, '+')
-    plt.title('Distribution of agg. strength USAL 2012 - 2020')
-    plt.xlabel('$s_i$', fontsize=15)
-    plt.ylabel('$P(s_i)$', fontsize=15)
-    plt.show()
-
-    # Aggregate weights
-    w = np.array([al_agg[i, j] for i in range(N) for j in np.arange(i + 1, N, 1)])
-    x, y = np.histogram(w, bins=200)
-    plt.figure(figsize=(8, 3))
-    plt.semilogy(y[:-1], x, '+')
-    plt.title('Distribution of agg. weights USAL 2012 - 2020')
-    plt.xlabel('$w_{ij}$', fontsize=15)
-    plt.ylabel('$P(w_{ij})$', fontsize=15)
-    plt.show()
 
