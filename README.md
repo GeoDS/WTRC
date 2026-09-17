@@ -12,7 +12,7 @@ Spatial networks are widely used in various fields to represent and analyze inte
 
 If you find our code on WTRC useful for your research, you may cite our paper:
 
-Kruse, J., Gao, S.*, Ji, Y., Levin, K., Huang, Q., and Mayer, K. (2025).  [Identifying rich clubs in spatiotemporal interaction networks](https://www.arxiv.org/abs/2501.05636). Annals of the American Association of Geographers. 115, 4, 1-20.
+Kruse, J., Gao, S.*, Ji, Y., Levin, K., Huang, Q., and Mayer, K. (2025).  [Identifying rich clubs in spatiotemporal interaction networks](https://www.arxiv.org/abs/2501.05636). Annals of the American Association of Geographers, 115(14), 899-922.
 
 
 ```
@@ -47,23 +47,45 @@ Github: [https://github.com/nicolaPedre/Temporal-Rich-Club](https://github.com/n
 ```
 
 ## Requirements
-WTRC uses the following packages with Python 3.12.0:
-numpy==1.26.0
-pandas==2.1.1
-shapely==2.0.1
-geopandas=0.14.0
-matplotlib-base=3.8.0
+WTRC was developed with Python 3.12 and the following packages:
+numpy>=1.26
+pandas>=2.1
+shapely>=2.0
+geopandas>=0.14
+matplotlib>=3.8
 
-A full list of the packages and package versions can be found in the trc_env.yml file.
+It also runs on numpy 2.x. A full list of the packages and versions used for the
+paper can be found in the trc_env.yml file.
 
 ![image](https://github.com/user-attachments/assets/131a9e04-3795-45b4-819a-64b7aae7b799)
 
 ## Usage
 There are two demo files: WTRC_example.ipynb, and TTRC_example.ipynb. To distinguish the weighted temporal rich club effects from the topological temporal rich club effects, you can run both and compare them. While the files are mostly similar, the WTRC and the TTRC use different randomization methods to prepare the null graphs, and all edge weights are set to 1 in the TTRC.
+
+## Pipeline
+The analysis runs in five steps, each a function in `wtrc.py`:
+
+| Step | Function |
+| --- | --- |
+| Load and filter the flow table | `load_flows` |
+| Restrict it to one district's census tracts | `filter_flows_to_district` |
+| Build the temporal graph series and its null models | `build_graph_series` |
+| Compute the rich club matrices | `calculate_rich_club_matrices` |
+| Read the saved results back and plot them | `load_results`, `plot_results` |
+
+`compute_k_and_delta_ranges` returns the richness thresholds and time lags a scan
+sweeps over, which the notebooks use for plotting.
+
+Results are written to `output/` and named by the settings that produced them, as
+`{network_type}_rich_club_dis{district}_t{start}-{end}_{kind}`, where `kind` is
+`scan` for the rich club coefficients, `max_t` for the starting timestep of the
+strongest window, `geoids` for the club members, and `m_s` for the per-window
+matrices. `output_path` in `wtrc.py` builds these names.
+
 ## Data
 wi_cong_adopted_2022: 2022 Wisconsin Congressional Plan in GIS shapefile format.
 
-wi_ct_boundaries_2018: Wisconsin Census Tract Boundaries in GIS shapefile format, which can also be downloaded from US Census.
+wi_ct_boundaries_2018: Wisconsin Census Tract Boundaries, committed as a zipped shapefile (`WI_CensusCBF_Tracts_2018.zip`) and read directly from the archive. The same file can be downloaded from the US Census.
 
 split_flow_files: It contains multiple aggregated human mobility flow files at the Census Tract Level in Wisconsin that can be merged into one large file 'WICTs_allyears.csv' using the Python script 'flows_file_combiner.py'
 
