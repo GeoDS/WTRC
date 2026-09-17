@@ -28,10 +28,11 @@ def filter_flows_to_district(flows_df, district):
     district_polygon = district_boundaries[district_boundaries['NAME'] == district].geometry.iloc[0]
     # load census tracts
     # cts = './wi_ct_boundaries_2020/wi_t_2020_bound.shp'
-    cts = './wi_ct_boundaries_2018/ct_wi.shp'
+    cts = ("zip://wi_ct_boundaries_2018/WI_CensusCBF_Tracts_2018.zip"
+           "!WI_CensusCBF_Tracts_2018/cb_2018_55_tract_500k.shp")
     cts = gpd.read_file(cts)
     cts = cts.to_crs("EPSG:3071")
-    cts['GEOID20'] = cts['GEOID20'].astype(int)
+    cts['GEOID'] = cts['GEOID'].astype(int)
     # filter census tracts by spatial intersect (mostly within district boundary)
     buffered_polygon = district_polygon.buffer(0)
     # Step 3: Filter gdf to include geometries with more than 70% of their area within the buffered polygon
@@ -46,7 +47,7 @@ def filter_flows_to_district(flows_df, district):
     plt.show()
     
     # filter flows_df to geoids in within boundary
-    valid_geoids = set(filtered_cts['GEOID20'])
+    valid_geoids = set(filtered_cts['GEOID'])
     # Filter flows_df for rows where both geoid_o and geoid_d are in valid_geoids
     flows_df_filtered = flows_df[flows_df['geoid_o'].isin(valid_geoids) & flows_df['geoid_d'].isin(valid_geoids)]
     
@@ -57,7 +58,7 @@ def filter_flows_to_district(flows_df, district):
     node_geoid_dict = {k: geoids_set[k] for k in range(len(geoids_set))}
     geoid_node_dict = {geoids_set[k]: k for k in range(len(geoids_set))}
     print(f'Count of geometries in filtered_flows_df: {len(geoids_set)}')
-    flows_df_filtered = flows_df_filtered.drop(columns=['Unnamed: 0'])
+    flows_df_filtered = flows_df_filtered.drop(columns=['Unnamed: 0'], errors='ignore')
     flows_df_filtered['i'] = flows_df_filtered['geoid_o'].map(geoid_node_dict)
     flows_df_filtered['j'] = flows_df_filtered['geoid_d'].map(geoid_node_dict)
     
@@ -914,7 +915,7 @@ def calculate_rc_matrices(flows_df, graphs_array, args):
     
     # T = np.shape(graphs_array)[0] # get number of graphs
     T = max(flows_df.t)
-    longest_length = T - 0 + 1 # When delta is 0 -> this is the longest case
+    longest_length = int(T) + 1  # When delta is 0 -> this is the longest case
     
     loop_count = 0
     for graphs_list, AGG in graphs_array:
