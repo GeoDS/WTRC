@@ -70,7 +70,7 @@ import matplotlib.cm as cm
 from matplotlib.colors import TwoSlopeNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def plot_RC_norm(ks, deltas, RC_norm, args):
+def plot_rich_club_scan(ks, deltas, RC_norm, args):
     # Replace infinities and NaNs
     RC_norm = np.nan_to_num(RC_norm, nan=-99)
     RC_norm_masked = np.ma.masked_where(RC_norm == -99, RC_norm)
@@ -189,7 +189,7 @@ def plot_rich_nodes(flows_df, district, rich_nodes, args):
     
     return boundary, filtered_cts, filtered_centroids
 
-def plot_cong_districts():
+def plot_congressional_districts():
     gdf = gpd.read_file("./wi_cong_adopted_2022/POLYGON.shp")
     # gdf = gdf.to_crs("EPSG:32616")
     gdf = gdf.to_crs("EPSG:3071")
@@ -217,7 +217,7 @@ def plot_cong_districts():
 import networkx as nx
 from random import choice
 
-def p__w_t(graphs_list, args):
+def load_randomized_graphs(graphs_list, args):
     # read in one randomized graph
     # the csvs in the directory listed below have already been randomized with P__w_t, and so we just load them here
         # Step 1: Identify the CSV files
@@ -251,8 +251,8 @@ def p__w_t(graphs_list, args):
         df['geoid_o'] = -1
         df['geoid_d'] = -1
 
-        # Step 4: Call produce_graphs on the DataFrame
-        # Assuming produce_graphs is a function that accepts a DataFrame and returns a graph object
+        # Step 4: Call build_graphs on the DataFrame
+        # Assuming build_graphs is a function that accepts a DataFrame and returns a graph object
         # Replace x, nodes, iis, jjs with actual values or variables
         iis=np.unique(df['i'])
         jjs=np.unique(df['j'])
@@ -262,14 +262,14 @@ def p__w_t(graphs_list, args):
         nodes = len(combined_unique)
         x = max(df['t'])
 
-        graphs_list_dc, AGG = produce_graphs(df, x, nodes, iis, jjs)
+        graphs_list_dc, AGG = build_graphs(df, x, nodes, iis, jjs)
         # graphs_randomized.append(graphs_list_dc)
 
     return graphs_list_dc
 
 
 
-def preserve_strength_G(i,G):
+def randomize_preserving_strength(i,G):
     # https://github.com/jeffalstott/richclub/blob/master/richclub.py
     # - assuming bc most of the processes are launched at the same second
     seed = uuid.uuid4().int & (1<<32)-1
@@ -307,13 +307,13 @@ def preserve_strength_G(i,G):
 
 
 
-def preserve_strength(graphs_list):
+def randomize_series_preserving_strength(graphs_list):
     # https://github.com/jeffalstott/richclub/blob/master/richclub.py
 
     from numpy.random import shuffle
     new_graphs = []
     for i, G in enumerate(graphs_list):
-        G_shuffled_w = preserve_strength_G(i,G)
+        G_shuffled_w = randomize_preserving_strength(i,G)
         new_graphs.append(G_shuffled_w)
 
     return new_graphs
@@ -371,7 +371,7 @@ def double_edge_swap(G, nswap=1, max_tries=100, seed=None):
         n += 1
     return G
 
-def sample_degseq(graphs_list):
+def sample_degree_sequence(graphs_list):
     new_graphs = []
     # initialize swap numbers based on first graph
     Q = 1
@@ -387,7 +387,7 @@ def sample_degseq(graphs_list):
 
 
 
-def sequence_shuffling(graphs_list):
+def shuffle_sequence(graphs_list):
     # P[pT (Γ)]: P__pGamma from https://arxiv.org/pdf/1806.04032v3.pdf
     # https://github.com/mgenois/RandTempNet/blob/master/randomisations.py
     """
@@ -408,31 +408,31 @@ def sequence_shuffling(graphs_list):
     
     return shuffled_graphs
 
-def topoTempRandomization(input_list, dt=1):
-    print(f'starting topoTempRandomization...')
+def randomize_topology_and_time(input_list, dt=1):
+    print(f'starting randomize_topology_and_time...')
     graphs_list, AGG, args = input_list
     
     if args.randomize == 'pwt':
         print('Using pwt for randomization')
-        graphs_list = p__w_t(graphs_list, args)
+        graphs_list = load_randomized_graphs(graphs_list, args)
         return graphs_list, AGG 
     
-    graphs_list = sequence_shuffling(graphs_list) # shuffle temporal order
-    print('Finished sequence_shuffling(graphs_list)')
+    graphs_list = shuffle_sequence(graphs_list) # shuffle temporal order
+    print('Finished shuffle_sequence(graphs_list)')
     
     if args.just_sequence == "True":
         print('Using just sequence shuffling for randomization')
-        print('Only doing sequence_shuffling() for randomization')
+        print('Only doing shuffle_sequence() for randomization')
         return graphs_list, AGG
     
     
     if args.network_type == 'topological' or args.network_type == 'trc':
         print('Using edge swapping for randomization')
-        graphs_list = sample_degseq(graphs_list)
+        graphs_list = sample_degree_sequence(graphs_list)
 
     elif args.network_type == 'weighted':
         print('Using weight decorrelation for randomization')
-        graphs_list = preserve_strength(graphs_list)
+        graphs_list = randomize_series_preserving_strength(graphs_list)
     
     # we don't use the randomized agg graphs, so just return the original (return to keep functions happy)
         # -> richness sequence is calculated with the original AGG each time
@@ -440,7 +440,7 @@ def topoTempRandomization(input_list, dt=1):
 
 
 ########################### defining functions ###################
-def max_i(df):
+def max_node_index(df):
     i_max = df.i.max()
     j_max = df.j.max()
     max_ind = 0
@@ -451,7 +451,7 @@ def max_i(df):
     return max_ind
 
 
-def produce_graphs(df, x, nodes, iis, jjs):
+def build_graphs(df, x, nodes, iis, jjs):
     start = time.time()
     graphs_list = []
     # t already starts from 0, so need to add 1
@@ -501,26 +501,26 @@ def produce_graphs(df, x, nodes, iis, jjs):
         g.remove_edges_from(edges_to_drop)
         # edges_missing_attrs = [(u, v) for u, v, attrs in g.edges(data=True) if 'weight' not in attrs or 't' not in attrs]
         # print(f"Edges still missing attributes: {edges_missing_attrs}")
-                    # update_edge_weights(AGG, go) only counts weights >0 for temproal edges, so ok to just delete missing edges
+                    # update_aggregate_weights(AGG, go) only counts weights >0 for temproal edges, so ok to just delete missing edges
         graphs_list.append(deepcopy(g))
     end = time.time()
     tt = (end-start)/60
-    print(f'time taken (min) to run loop part of produce_graphs() = {tt}')
+    print(f'time taken (min) to run loop part of build_graphs() = {tt}')
     
     start = time.time()
     AGG = nx.Graph()
     graphs_list_dc = deepcopy(graphs_list)
     for gt in graphs_list_dc:
-        AGG = update_edge_weights(AGG, gt)
+        AGG = update_aggregate_weights(AGG, gt)
     
     end = time.time()
     tt = (end-start)/60
 
-    print(f'time taken (min) to create aggregate network in produce_graphs() = {tt}') 
+    print(f'time taken (min) to create aggregate network in build_graphs() = {tt}') 
     return graphs_list_dc, AGG
 
 
-def update_edge_weights(AGG, go):
+def update_aggregate_weights(AGG, go):
     for u, v, data in go.edges(data=True):
         # Add or update edges
         # I doubled checked - since the graph is undirected, only one ordering for each edge appears:
@@ -547,8 +547,8 @@ def update_edge_weights(AGG, go):
     return AGG
 
 
-# def TTRC(Gt,AggG,k,delta,N,T,nodes): #original
-def TTRC(Gt, AggG, k, delta, N, T, nodes, args):
+# def topological_rich_club(Gt,AggG,k,delta,N,T,nodes): #original
+def topological_rich_club(Gt, AggG, k, delta, N, T, nodes, args):
     # x=np.array([d[1] for d in AggG.degree()])
     # if args.randomize == "pwt" or args.weighted_degree == "False" or args.district == "DEG"::
     if args.district == "DEG":
@@ -592,9 +592,9 @@ def TTRC(Gt, AggG, k, delta, N, T, nodes, args):
         return 0, M_s, 0, np.array(rich_geoids)
 
 
-def WTRC(Gt, AggG, k, delta, N, T, nodes, args):
+def weighted_rich_club(Gt, AggG, k, delta, N, T, nodes, args):
     if args.network_type == 'trc':
-        np_max_M_s,M_s,time_max_t, rich_geoids = TTRC(Gt, AggG, k, delta, N, T, nodes, args)
+        np_max_M_s,M_s,time_max_t, rich_geoids = topological_rich_club(Gt, AggG, k, delta, N, T, nodes, args)
         return np_max_M_s,M_s,time_max_t, rich_geoids
     elif args.district == "DEG":
         # print('Using degree sequence for richness sequence')
@@ -625,19 +625,19 @@ def WTRC(Gt, AggG, k, delta, N, T, nodes, args):
     return np.max(M_s), M_s, np.argmax(M_s), np.array(rich_geoids)
 
 
-def runPool(var_lists): 
+def run_pool(var_lists): 
     # print(f'args.weighted_degree == {args.weighted_degree}')
     pool = Pool(args.pool)
-    results = pool.map_async(temporal_RC_MOD, var_lists)
+    results = pool.map_async(temporal_rich_club_mod, var_lists)
     pool.close()
     pool.join()
     return results
 
-def chunk_using_generators(lst, n):
+def chunk(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-def make_graph_simple_connected(G):
+def make_simple_connected(G):
     # Create a copy of the graph to avoid modifying the original
     H = G.copy()
 
@@ -660,7 +660,7 @@ def make_graph_simple_connected(G):
             H.add_edge(list(components[i])[-1], list(components[i + 1])[0])
 
     return H
-def load_data(df, max_ind, args):
+def build_graph_series(df, max_ind, args):
     shuffle=args.shuffle
     # tranform data in series of nx graphs
     iis=np.unique(df['i'])
@@ -675,7 +675,7 @@ def load_data(df, max_ind, args):
     print(f'starting to produce graphs')
     start_i = time.time()
 
-    graphs_list, AGG = produce_graphs(df, x, nodes, iis, jjs)
+    graphs_list, AGG = build_graphs(df, x, nodes, iis, jjs)
     print('edge and node count of OG graph, prior to randomization:')
     en = []
     G = AGG
@@ -689,7 +689,7 @@ def load_data(df, max_ind, args):
     
     # make sure randomized are simple and connected, for viger-latapy
     # Apply the make_graph_simple function to each graph in the list...doing here saves having to do it 20 times later
-    # graphs_list_simple = [make_graph_simple_connected(G) for G in graphs_list]
+    # graphs_list_simple = [make_simple_connected(G) for G in graphs_list]
 
     # graphs_notRandomized = [deepcopy((graphs_list_simple,AGG,args)) for t in range(shuffle)]
     graphs_list_simple =  deepcopy(graphs_list)
@@ -703,7 +703,7 @@ def load_data(df, max_ind, args):
     print(en,'\n')
     print('starting randomization...\n')
     # if args.network_type == "topological":
-    graphs_randomized = randomizePoolRunner(graphs_notRandomized, args)
+    graphs_randomized = run_randomization_pool(graphs_notRandomized, args)
         
     # insert the original, unmodified graph_list back into the simplified, connected, and randomized gprahs_lists's 
     graphs_randomized.insert(0, deepcopy((graphs_list, AGG))) # add back to front of list
@@ -712,15 +712,15 @@ def load_data(df, max_ind, args):
     print(f'total time (mins) to produce all graphs = {time_taken}')
     return graphs_randomized
 
-def topoShufflePool(var_lists, args): 
+def shuffle_topology_pool(var_lists, args): 
     pool = Pool(args.pool)
-    results = pool.map_async(topoTempRandomization, var_lists)
+    results = pool.map_async(randomize_topology_and_time, var_lists)
     pool.close()
     pool.join()
     return results
 
-def randomizePoolRunner(var_lists, args):
-    results = topoShufflePool(var_lists, args)
+def run_randomization_pool(var_lists, args):
+    results = shuffle_topology_pool(var_lists, args)
     results = results.get()
     graphs_randomized = []
     for tup in results:
@@ -729,12 +729,12 @@ def randomizePoolRunner(var_lists, args):
     return graphs_randomized
 
 
-def temporal_RC_MOD(var_list):
+def temporal_rich_club_mod(var_list):
     deltas, ks, delta, k, graphs_list, AGG, nodes,args = var_list
-    # val = temporal_RC(graphs_list,AGG,ks[k],deltas[delta],np.shape(graphs_list)[1],np.shape(graphs_list)[0],nodes,args)[0]
+    # val = temporal_rich_club(graphs_list,AGG,ks[k],deltas[delta],np.shape(graphs_list)[1],np.shape(graphs_list)[0],nodes,args)[0]
     # return (delta,k,val)
-    # temporal_RC(Gt, AggG, k, delta, N, T, nodes, args)
-    np_max_M_s,M_s,time_max_t, rich_geoids = temporal_RC(graphs_list,AGG,ks[k],deltas[delta],np.shape(graphs_list)[1],np.shape(graphs_list)[0],nodes,args)
+    # temporal_rich_club(Gt, AggG, k, delta, N, T, nodes, args)
+    np_max_M_s,M_s,time_max_t, rich_geoids = temporal_rich_club(graphs_list,AGG,ks[k],deltas[delta],np.shape(graphs_list)[1],np.shape(graphs_list)[0],nodes,args)
     tup = (delta,k,np_max_M_s,M_s,time_max_t, rich_geoids)
     return tup
 
@@ -746,7 +746,7 @@ import math
 import numpy as np
 
 # for aiport as of 3/31/25
-def set_ds_ks_ALL(df, graphs_array, args, weighted_degree='False'):
+def compute_k_and_delta_ranges(df, graphs_array, args, weighted_degree='False'):
     print('Calculating steps based on original graph, NOT randomized graphs.')
 
     # Initialize variables to store aggregate degrees
@@ -795,7 +795,7 @@ def set_ds_ks_ALL(df, graphs_array, args, weighted_degree='False'):
 
 
 
-def chunk_generator(deltas, ks, graphs_list, AGG, args):
+def generate_chunks(deltas, ks, graphs_list, AGG, args):
     nodes = np.sort(np.array([v for v in AGG.nodes]), axis=0)
     RC_mat=np.zeros((len(deltas),len(ks)))
     geoid_mat=np.empty((len(deltas),len(ks)), dtype=object)
@@ -805,15 +805,15 @@ def chunk_generator(deltas, ks, graphs_list, AGG, args):
     for delta in range(len(deltas)):
         for k in range(len(ks)):
             var_lists.append(copy.deepcopy([deltas, ks, delta, k, graphs_list, AGG, nodes, args]))
-    var_lists_segments = list(chunk_using_generators(var_lists, len(var_lists)/2)) # was 20
+    var_lists_segments = list(chunk(var_lists, len(var_lists)/2)) # was 20
     print(f'len(var_lists_segments) = {len(var_lists_segments)}')
     return RC_mat, var_lists_segments, RC_maxTs, geoid_mat
 
 
-def run_TRC_for_segments(RC_mat, var_lists_segments, RC_maxTs, RC_rich_geoids):
+def run_rich_club_segments(RC_mat, var_lists_segments, RC_maxTs, RC_rich_geoids):
     for i in range(len(var_lists_segments)):
         var_lists = var_lists_segments[i]
-        results = runPool(var_lists)
+        results = run_pool(var_lists)
         results = results.get()
         for tup in results:
             delta,k,np_max_M_s,M_s,time_max_t, rich_geoids = tup
@@ -824,21 +824,21 @@ def run_TRC_for_segments(RC_mat, var_lists_segments, RC_maxTs, RC_rich_geoids):
     return RC_mat, RC_maxTs, RC_rich_geoids
 
 
-def temporal_RC(Gt, AggG, k, delta, N, T, nodes, args):
+def temporal_rich_club(Gt, AggG, k, delta, N, T, nodes, args):
     # degrees = [(n, AggG.nodes[n]['node_id'], AggG.nodes[n]['geoid'], d) for n, d in AggG.degree(weight='temp_edge_count')]
-    np_max_M_s,M_s,time_max_t, rich_geoids = WTRC(Gt,AggG,k,delta,N,T,nodes,args) # run OUR TTRC
+    np_max_M_s,M_s,time_max_t, rich_geoids = weighted_rich_club(Gt,AggG,k,delta,N,T,nodes,args) # run OUR TTRC
     return np_max_M_s,M_s,time_max_t, rich_geoids
 
 
 
-def count_unique_t_values(flows_df, i_value, j_value):
+def count_unique_timesteps(flows_df, i_value, j_value):
     # Count the number of unique 't' values for rows in the DataFrame that match the given 'i' and 'j'.
     filtered_df = flows_df[(flows_df['i'] == i_value) & (flows_df['j'] == j_value)]
     print(filtered_df['t'].nunique())
     return filtered_df
 
 
-def process_flows_df(args):
+def load_flows(args):
     print(f'Network type = {args.network_type}')
     # Now use args.data_dir and args.data_file in your script
     path = args.data_dir
@@ -886,13 +886,13 @@ def process_flows_df(args):
     print(f'Len of flows_df = {len(flows_df)}.... = number of edges across all timesteps')
     print(f'number of unique flows_df.i = {flows_df.i.nunique()}')
     print(f'number of unique flows_df.j = {flows_df.j.nunique()}')
-    # Assuming max_i(flows_df) is a function that you have defined elsewhere
-    max_ind = max_i(flows_df)
+    # Assuming max_node_index(flows_df) is a function that you have defined elsewhere
+    max_ind = max_node_index(flows_df)
 
     return flows_df, max_ind
 
 
-def calculate_rc_matrices(flows_df, graphs_array, args):
+def calculate_rich_club_matrices(flows_df, graphs_array, args):
     def chunker(seq, size):
         """Yield successive size chunks from seq."""
         for i in range(0, len(seq), size):
@@ -909,9 +909,9 @@ def calculate_rc_matrices(flows_df, graphs_array, args):
     
     if args.district == "DEG":
         print('Using degree sequence for richness sequence')
-        deltas, ks, d_step = set_ds_ks_ALL(flows_df, graphs_array, args, weighted_degree=args)
+        deltas, ks, d_step = compute_k_and_delta_ranges(flows_df, graphs_array, args, weighted_degree=args)
     else:
-        deltas, ks, d_step = set_ds_ks_ALL(flows_df, graphs_array, args, weighted_degree=args.weighted_degree)
+        deltas, ks, d_step = compute_k_and_delta_ranges(flows_df, graphs_array, args, weighted_degree=args.weighted_degree)
     
     # T = np.shape(graphs_array)[0] # get number of graphs
     T = max(flows_df.t)
@@ -938,7 +938,7 @@ def calculate_rc_matrices(flows_df, graphs_array, args):
         # Process each chunk using multiprocessing Pool
         for chunk_index, var_chunk in enumerate(var_chunks):
             with Pool(args.pool) as pool:  # Adjust pool size as needed
-                results = pool.map(temporal_RC_MOD, var_chunk)
+                results = pool.map(temporal_rich_club_mod, var_chunk)
 
             # Unpack results and update matrices
             for i, result in enumerate(results):
@@ -1004,11 +1004,11 @@ def calculate_rc_matrices(flows_df, graphs_array, args):
     print('Saved RC matrices to ', path) 
     return RC_matrices_list, RC_maxTs_list, RC_geoids_list
 
-def process_graph_tuple(data):
+def unpack_graph_tuple(data):
     RC_mat, var_lists_segments, RC_maxTs, geoid_mat = data
-    return run_TRC_for_segments(RC_mat, var_lists_segments, RC_maxTs, geoid_mat)
+    return run_rich_club_segments(RC_mat, var_lists_segments, RC_maxTs, geoid_mat)
 
-def load_and_process_data(args):
+def load_results(args):
     # Construct the file path
     # path = args.path_prefix + args.date + "_" + args.npy_file + "_" + args.network_type + '.npy'
     path = args.path_prefix + args.date + "_" + str(args.ti) + "_" + str(args.t) + "_" + args.npy_file + "_" + args.network_type + "_dis" + str(args.district) + '.npy'
@@ -1040,7 +1040,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
-def process_and_visualize_data(args):
+def plot_results(args):
 
     # path+='ut/240322_0_105_M_s_airports_trc_disDEG_M_s_matrices'
     path=args.path_prefix + args.date + "_" + str(args.ti) + "_" + str(args.t) + "_M_s_" +args.npy_file + "_" + args.network_type +"_dis" + str(args.district)+'_M_s_matrices.npz'
@@ -1106,7 +1106,7 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 
-def process_data_and_generate_graphs(date, path):
+def load_and_build_graphs(date, path):
     # Load the CSV file into a DataFrame
     USAL_TN_df = pd.read_csv(path)
     
@@ -1129,8 +1129,8 @@ def process_data_and_generate_graphs(date, path):
     # Determine the number of unique time steps
     x = len(np.unique(USAL_TN_df['t']))
     
-    # Placeholder for the function produce_graphs - You'll need to define this
-    graphs_list_dc, AGG = produce_graphs(USAL_TN_df, x, nodes, iis, jjs)
+    # Placeholder for the function build_graphs - You'll need to define this
+    graphs_list_dc, AGG = build_graphs(USAL_TN_df, x, nodes, iis, jjs)
     
     # Create a list of all nodes
     nodelist = np.union1d(iis, jjs)
@@ -1146,10 +1146,10 @@ def process_data_and_generate_graphs(date, path):
     
     return AL_AGG, AGG, al_agg, USAL_TN_df, graphs_list_dc, nodes, N
 
-# Note: The function produce_graphs needs to be defined with its logic matching your specific requirements.
+# Note: The function build_graphs needs to be defined with its logic matching your specific requirements.
 
 
-def plot_aggregated_distributions(AL_AGG, AGG, al_agg, N):
+def plot_aggregate_distributions(AL_AGG, AGG, al_agg, N):
     print('These first two plots should be the same:')
     # Aggregate degree for AL_AGG
     agg_k = [fr[1] for fr in list(AL_AGG.degree())]
