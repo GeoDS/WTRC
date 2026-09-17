@@ -2,8 +2,8 @@
 
 **Identifying rich clubs in spatiotemporal interaction networks**
  
-![WTRC](https://github.com/GeoDS/WTRC/blob/master/wi_wtrc_ttrc_horizontal_ave.png)
-![WTRC Example](https://github.com/GeoDS/WTRC/blob/master/flow_snapshots_nolabels.png)
+![WTRC](wi_wtrc_ttrc_horizontal_ave.png)
+![WTRC Example](flow_snapshots_nolabels.png)
 
 **Abstract:** 
 Spatial networks are widely used in various fields to represent and analyze interactions or relationships between locations or spatially distributed entities or objects. While existing studies have proposed methods for hub identification and community detection in spatial networks, relatively few have focused on quantifying the strength or density of connections shared within a community of hubs across space and time. Borrowing from network science, there is a relevant concept known as the 'rich club' phenomenon, which describes the tendency of 'rich' nodes to form densely interconnected sub-networks. Although there are established methods to quantify topological, weighted, and temporal rich clubs individually, there is limited research on measuring the rich club effect in spatially-weighted temporal networks, which could be particularly useful for studying dynamic spatial interaction networks. To address this gap, we introduce the spatially-weighted temporal rich club (WTRC), a metric that quantifies the strength and consistency of connections between rich nodes in a spatiotemporal network. Additionally, we present a unified rich club framework that distinguishes the WTRC effect from other rich club effects, providing a way to measure topological, weighted, and temporal rich club effects together. Through two case studies of human mobility networks at different spatial scales, we demonstrate how the WTRC is able to identify significant weighted temporal rich club effects, whereas the unweighted equivalent in the same network either fails to detect a rich club effect or inaccurately estimates its significance. In each case study, we explore the spatial layout and temporal variations revealed by the WTRC analysis, showcasing its particular value in studying spatiotemporal interaction networks. This research offers new insights into the study of spatiotemporal networks, with critical implications for applications such as transportation, redistricting, and epidemiology.
@@ -47,17 +47,18 @@ Github: [https://github.com/nicolaPedre/Temporal-Rich-Club](https://github.com/n
 ```
 
 ## Requirements
-WTRC was developed with Python 3.12 and the following packages:
+WTRC was developed with Python 3.12 and needs:
+
+```
 numpy>=1.26
 pandas>=2.1
 shapely>=2.0
 geopandas>=0.14
 matplotlib>=3.8
+```
 
-It also runs on numpy 2.x. A full list of the packages and versions used for the
-paper can be found in the trc_env.yml file.
-
-![image](https://github.com/user-attachments/assets/131a9e04-3795-45b4-819a-64b7aae7b799)
+It also runs on numpy 2.x. The exact versions used for the paper are in
+`trc_env.yml`.
 
 ## Usage
 There are two demo files: WTRC_example.ipynb, and TTRC_example.ipynb. To distinguish the weighted temporal rich club effects from the topological temporal rich club effects, you can run both and compare them. While the files are mostly similar, the WTRC and the TTRC use different randomization methods to prepare the null graphs, and all edge weights are set to 1 in the TTRC.
